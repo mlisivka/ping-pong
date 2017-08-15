@@ -1,0 +1,16 @@
+#field {
+  position: absolute;
+  width: 600px;
+  height: 400px;
+  left: calc(50% - 300px);
+  top: calc(50% - 200px);
+  background: black;
+}
+.platform {
+  position: absolute;
+  width: 10px;
+  height:150px;
+  background: yellow;
+  right: 20px;
+  top: 125px;
+}
