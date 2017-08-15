@@ -14,3 +14,18 @@
   right: 20px;
   top: 125px;
 }
+#ball {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  top: 50%; 
+  background-color: red;
+  -webkit-box-background: radial-gradient(circle at 10px 10px, #39C29D, #000);
+  -moz-box-background: radial-gradient(circle at 10px 10px, #39C29D, #000);
+  background: radial-gradient(circle at 10px 10px, #39C29D, #000);
+  -webkit-box-shadow: 1px 1px 5px 0px;
+  -moz-box-shadow: 1px 1px 5px 0px;
+  box-shadow: 1px 1px 5px 0px;
+}
