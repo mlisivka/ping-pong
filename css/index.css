@@ -11,7 +11,7 @@
   width: 10px;
   height:150px;
   background: yellow;
-  right: 20px;
+  right: 120px;
   top: 125px;
 }
 #ball {
@@ -28,4 +28,6 @@
   -webkit-box-shadow: 1px 1px 5px 0px;
   -moz-box-shadow: 1px 1px 5px 0px;
   box-shadow: 1px 1px 5px 0px;
+}
+.log {
 }
