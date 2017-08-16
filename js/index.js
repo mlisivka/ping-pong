@@ -13,11 +13,12 @@ $(document).ready(function () {
   var fieldWidth = field.width();
 
   var ball = $('#ball');
-  var ballX = ball.position().left;
-  var ballY = ball.position().top;
-  var ballDiameter = ball.width();
-  var velocityX = 5;
-  var velocityY = 5;
+  var ballRadius = ball.width()/2;
+  // Coordinates of the ball center
+  var ballX = ball.position().left + ballRadius*2;
+  var ballY = ball.position().top + ballRadius*2;
+  var velocityX = 10;
+  var velocityY = 10;
 
   var launched = false;
   var debugElements = [];
@@ -41,39 +42,117 @@ $(document).ready(function () {
 
     // Можливо при великій швидкості потрібно буде ставити мяч на ці координати щоб мяч не застряв у стіні
     // When the ball touched the wall
-    if (ballX < 0 || ballX > fieldWidth - ballDiameter) {
+    if (ballX < 0 || ballX > fieldWidth - ballRadius*2) {
       velocityX = -velocityX;
     }
-    if (ballY < 0 || ballY > fieldHeight- ballDiameter) {
+    if (ballY < 0 || ballY > fieldHeight- ballRadius*2) {
       velocityY = -velocityY;
     }
-  
+    
     // When the ball touched the platform
     if (!MacroCollision(ball, platform)) { return } 
+    repelBall()
     if (ballTouchedLeftSide()) {
+    //  velocityX = -Math.abs(velocityX);
+    }
+  }
+
+  function repelBall() {
+    var interPoint = getIntersectionPoint();
+    buildReflection(interPoint);
+  }
+
+  function getIntersectionPoint() {
+
+    // Compute previous ball points
+    var bY = ballY - velocityY;
+    var bX = ballX - velocityX;
+    var point = horizontalReflection(bX, bY);
+    if (!point) {
+      point = verticalReflection(bX, bY);
+    }
+    return point;
+  }
+
+  function buildReflection(point) {
+
+  }
+
+  function horizontalReflection(bX, bY) {
+    var distanceBetweenY = Math.abs(bY - ballY);
+    var distanceBYPlatform;
+    var distanceBallYPlatform;
+    var pointX;
+    var pointY;
+    if (bX - ballRadius <= platformX) { // When the ball came to the left
+      distanceBYPlatform = Math.abs(bY - platformY);
+      distanceBallYPlatform = Math.abs(ballY - platformY);
+      pointX = platformX;
+      pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
+     
+      if (pointY <= platformY || pointY >= platformY+platformHeight) { return; }
+      ballX = pointX - ballRadius - 1;
       velocityX = -Math.abs(velocityX);
     }
-    if (ballTouchedBotSide()) {
-      velocityY = Math.abs(velocityY);
+    else if (bX + ballRadius >= platformX+platformWidth) { // When the ball came to the right
+      distanceBYPlatform = Math.abs(bY - platformY) + platformWidth;
+      distanceBallYPlatform = Math.abs(ballY - platformY) + platformWidth;
+      pointX = platformX + platformWidth;
+      pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
+      // if the point is outside 
+      if (pointY <= platformY || pointY >= platformY+platformHeight) { return; }
+      ballX = pointX + ballRadius + 1;
+      velocityX = Math.abs(velocityX);
     }
-    else if (ballTouchedTopSide()) {
+    else {
+      return;
+    }
+    return [pointX, pointY];
+  }
+  
+  function verticalReflection(bX, bY) {
+    var distanceBetweenX = Math.abs(bX - ballX);
+    var distanceBXPlatform;
+    var distanceBallXPlatform;
+    var pointX;
+    var pointY;
+    if (bY - ballRadius < platformY) { // When the ball came to the top
+      distanceBXPlatform = Math.abs(bX - platformX);
+      distanceBallXPlatform = Math.abs(ballX - platformX);
+      pointY = platformY;
+      pointX = bX + (distanceBetweenX*distanceBXPlatform)/(distanceBXPlatform + distanceBallXPlatform);
+      // ballX = pointX;
+      ballY = pointY - ballRadius - 1;
       velocityY = -Math.abs(velocityY);
     }
+    else if (bY + ballRadius > platformY+platformHeight) { // When the ball came to the bottom
+      distanceBXPlatform = Math.abs(bX - platformX) + platformHeight;
+      distanceBallXPlatform = Math.abs(ballX - platformX) + platformHeight;
+      pointY = platformY + platformHeight;
+      pointX = bX + (distanceBetweenX*distanceBXPlatform)/(distanceBXPlatform + distanceBallXPlatform);
+      // ballX = pointX;
+      ballY = pointY + ballRadius + 1;
+      velocityY = Math.abs(velocityY);
+    }
+    else {
+      return;
+    }
+    return [pointX, pointY];
   }
 
   function ballTouchedLeftSide() {
     // Right side coordinates
-    var x = ballX + ballDiameter;
-    var y = ballY + ballDiameter/2;
+    var x = ballX + ballRadius*2;
+    var y = ballY + ballRadius;
     return x > platformX && ballX < platformX+platformWidth && y > platformY && y < platformY+platformHeight
   }
 
   function ballTouchedTopSide() {
-    return (ballY < platformY+platformHeight/2 || ballY+ballDiameter > platformY) && ballX+ballDiameter/2 > platformX && ballX+ballDiameter/2 < platformX+platformWidth
+    return (ballY < platformY+platformHeight/2 || ballY+ballRadius*2 > platformY) && ballX+ballRadius > platformX && ballX+ballRadius < platformX+platformWidth
   }
 
   function ballTouchedBotSide() {
-    return (ballY < platformY+platformHeight && ballY+ballDiameter > platformY+platformHeight/2) && ballX+ballDiameter/2 > platformX && ballX+ballDiameter/2 < platformX+platformWidth
+    return (ballY < platformY+platformHeight && ballY+ballRadius*2 > platformY+platformHeight/2) && ballX+ballRadius > platformX && ballX+ballRadius < platformX+platformWidth
   }
 
   function MacroCollision(obj1,obj2){
@@ -113,7 +192,6 @@ $(document).ready(function () {
       var log = $(".log")[i].textContent;
       var logStr = log.substr(log.lastIndexOf(":")+2);
       if (logStr != dElem.elem.toString()) {
-        console.log("yes");
         $(`#log${i}`).text(dElem.text + ": " + dElem.elem);
       }
     }
@@ -122,13 +200,13 @@ $(document).ready(function () {
   function render() {
     updateDebug();
     platform.css("top", platformY);
-    ball.css("top", ballY);
-    ball.css("left", ballX);
+    ball.css("top", ballY-ballRadius);
+    ball.css("left", ballX-ballRadius);
   }
 
   (function animloop() {
     moveBall();
     render();
-    setTimeout(animloop, 1000/60);
+    setTimeout(animloop, 1000/30);
   })();
 });  
