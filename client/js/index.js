@@ -69,25 +69,31 @@ $(document).ready(function () {
     
     // When the ball touched the platform
     if (collisionBallWith(platform)) {
-      repelBall()
+      repelBall(platform)
+    }
+    // When the ball touched the platform
+    if (collisionBallWith(enemy_platform)) {
+      repelBall(enemy_platform)
     }
   }
 
-  function repelBall() {
-    
-    
+
+  function repelBall(platform) {
     // Compute previous ball points
     var bY = ballY - velocityY;
     var bX = ballX - velocityX;
   
     // Reflection of the ball
-    var point = horizontalReflection(bX, bY);
+    var point = horizontalReflection(bX, bY, platform);
     if (!point) {
-      point = verticalReflection(bX, bY);
+      point = verticalReflection(bX, bY, platform);
     }
   }
 
-  function horizontalReflection(bX, bY) {
+  function horizontalReflection(bX, bY, platform) {
+    var platformX = platform.position().left;
+    var platformY = platform.position().top;
+
     var distanceBetweenY = Math.abs(bY - ballY);
     var distanceBYPlatform;
     var distanceBallYPlatform;
@@ -104,7 +110,7 @@ $(document).ready(function () {
       pointX = platformX;
       pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
      
-      if (pointOutsidePlatform(pointX, pointY)) { return; }
+      if (pointOutsidePlatform(pointX, pointY, platformY)) { return; }
       ballX = pointX - ballRadius;
       velocityX = -Math.abs(velocityX);
     }
@@ -115,7 +121,7 @@ $(document).ready(function () {
       pointX = platformX + platformWidth;
       pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
     
-      if (pointOutsidePlatform(pointX, pointY)) { return; }
+      if (pointOutsidePlatform(pointX, pointY, platformY)) { return; }
       ballX = pointX + ballRadius;
       velocityX = Math.abs(velocityX);
     }
@@ -125,7 +131,10 @@ $(document).ready(function () {
     return [pointX, pointY];
   }
   
-  function verticalReflection(bX, bY) {
+  function verticalReflection(bX, bY, platform) {
+    var platformX = platform.position().left;
+    var platformY = platform.position().top;
+    
     var distanceBetweenX = Math.abs(bX - ballX);
     var distanceBXPlatform;
     var distanceBallXPlatform;
@@ -159,7 +168,7 @@ $(document).ready(function () {
     return [pointX, pointY];
   }
 
-  function pointOutsidePlatform(pointX, pointY) {
+  function pointOutsidePlatform(pointX, pointY, platformY) {
     return pointY <= platformY || pointY >= platformY+platformHeight;
   }
 
