@@ -7,6 +7,12 @@ $(document).ready(function () {
   var platformY = platform.position().top
   var platformX = platform.position().left;
 
+  var platform_id;
+  var enemy_id;
+  $('#field').append("<div class='platform' id='enemy'></div>");
+  var enemy_platform = $('#enemy');
+  var enemyY;
+  
   var field = $('#field');
   var fieldTop = field.position().top;
   var fieldHeight = field.height();
@@ -34,6 +40,10 @@ $(document).ready(function () {
     platformY = e.pageY - fieldTop - platformHeight/2;
     if (platformY < 0) platformY = 0;
     if (platformY > fieldHeight - platformHeight) platformY = fieldHeight - platformHeight;
+    var prevPlatformY = platform.position().top;
+    if (platform_id && prevPlatformY != platformY) {
+      savePlatformCoordinates();
+    }
   });
 
   function moveBall() {
@@ -200,8 +210,38 @@ $(document).ready(function () {
   function render() {
     updateDebug();
     platform.css("top", platformY);
+    enemy_platform.css("top", enemyY);
     ball.css("top", ballY-ballRadius);
     ball.css("left", ballX-ballRadius);
+  }
+
+  // WebSocket
+  var ws = new WebSocket("ws://localhost:8080");
+  ws.onopen = function() { onOpen() };
+
+  ws.onmessage = function(event) { onMessage(event) };
+
+  function onOpen() {
+    savePlatformCoordinates();
+  }
+
+  function onMessage(message) {
+    var data = JSON.parse(message.data);
+    var type = Object.keys(data)[0];
+    if (type == "platform_id" && !platform_id) {
+      platform_id = data.platform_id;
+    }
+    else if(type == "save_coordinates" && data.data.user_id != platform_id) {
+      enemyY = data.data.coor;
+    }
+  }
+
+  function savePlatformCoordinates() {
+    console.log(platform_id);
+    ws.send(JSON.stringify({
+      path: "save_coordinates",
+      data: { user_id: platform_id, coor: platformY }
+    }));
   }
 
   (function animloop() {
@@ -209,4 +249,5 @@ $(document).ready(function () {
     render();
     setTimeout(animloop, 1000/30);
   })();
+
 });  

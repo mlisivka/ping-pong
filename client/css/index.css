@@ -10,9 +10,14 @@
   position: absolute;
   width: 10px;
   height:150px;
-  background: yellow;
-  right: 120px;
+  background: blue;
+  right: 20px;
   top: 125px;
+}
+.platform#enemy {
+  background: green;
+  left: 20px;
+  right: 0;
 }
 #ball {
   width: 30px;
