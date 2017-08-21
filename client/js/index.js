@@ -1,17 +1,16 @@
 $(document).ready(function () {
   "use strict";
 
-  var platform = $('.platform');
+  var platform = $('#myself');
   var platformHeight = platform.height();
   var platformWidth = platform.width();
   var platformY = platform.position().top
-  var platformX = platform.position().left;
 
   var platform_id;
   var enemy_id;
-  $('#field').append("<div class='platform' id='enemy'></div>");
   var enemy_platform = $('#enemy');
   var enemyY;
+  var touchablePlatform; 
   
   var field = $('#field');
   var fieldTop = field.position().top;
@@ -40,6 +39,7 @@ $(document).ready(function () {
     if (platformY < 0) platformY = 0;
     if (platformY > fieldHeight - platformHeight) platformY = fieldHeight - platformHeight;
     
+    // Send to server platform coordinates if it was changed
     var prevPlatformY = platform.position().top;
     if (platform_id && prevPlatformY != platformY) {
       savePlatformCoordinates();
@@ -67,126 +67,92 @@ $(document).ready(function () {
       console.log("1:0");
     }
     
-    // When the ball touched the platform
-    if (collisionBallWith(platform)) {
-      repelBall(platform)
-    }
-    // When the ball touched the platform
-    if (collisionBallWith(enemy_platform)) {
-      repelBall(enemy_platform)
+    touchablePlatform = collisionBallWith([platform, enemy_platform]);
+    if (touchablePlatform) {
+      repelBall();
+      touchablePlatform = false;
     }
   }
 
+  function collisionBallWith(obj) {
+    for (var i = 0; i < obj.length; i++) {
+      // Intersection of the axes
+      var XColl=false;
+      var YColl=false;
 
-  function repelBall(platform) {
-    // Compute previous ball points
+      var objX = obj[i].position().left;
+      var objY = obj[i].position().top;
+      var objWidth = obj[i].width();
+      var objHeight = obj[i].height();
+      
+      if ((ballX+ballRadius >= objX) && (ballX-ballRadius <= objX+objWidth)) XColl = true;
+      if ((ballY+ballRadius >= objY) && (ballY-ballRadius <= objY+objHeight)) YColl = true;
+
+      if (XColl&YColl){ return obj[i]; }
+    }
+    return false;
+  }
+
+  // Не повинен приймати параметрів
+  function repelBall() {
+    // Calculate points in which the ball was before
     var bY = ballY - velocityY;
     var bX = ballX - velocityX;
   
-    // Reflection of the ball
-    var point = horizontalReflection(bX, bY, platform);
-    if (!point) {
-      point = verticalReflection(bX, bY, platform);
-    }
+    // Repelling the ball
+    horizontalRepelling(bX, bY) || verticalRepelling(bX, bY);
   }
 
-  function horizontalReflection(bX, bY, platform) {
-    var platformX = platform.position().left;
-    var platformY = platform.position().top;
+  function horizontalRepelling(bX, bY) {
+    var platformX = touchablePlatform.position().left;
+    var platformY = touchablePlatform.position().top;
 
-    var distanceBetweenY = Math.abs(bY - ballY);
-    var distanceBYPlatform;
-    var distanceBallYPlatform;
+    var distanceBetweenY = distance(bY, ballY);
+    var distanceBYPlatform = distance(bY, platformY);
+    var distanceBallYPlatform = distance(ballY, platformY);
    
-    // Points intersections with the platform
-    var pointX;
-    var pointY;
-    console.log(bX);
-    console.log(platformX);
+    // Point intersections with the platform
+    var pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
     if (bX < platformX) { // When the ball came to the left
-      distanceBYPlatform = Math.abs(bY - platformY);
-      distanceBallYPlatform = Math.abs(ballY - platformY);
-     
-      pointX = platformX;
-      pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
-     
-      if (pointOutsidePlatform(pointX, pointY, platformY)) { return; }
-      ballX = pointX - ballRadius;
+      if (pointYOutsidePlatform(pointY, platformY)) { return; }
+      ballX = platformX - ballRadius;
       velocityX = -Math.abs(velocityX);
     }
     else if (bX >= platformX+platformWidth) { // When the ball came to the right
-      distanceBYPlatform = Math.abs(bY - platformY) + platformWidth;
-      distanceBallYPlatform = Math.abs(ballY - platformY) + platformWidth;
-      
-      pointX = platformX + platformWidth;
-      pointY = bY + (distanceBetweenY*distanceBYPlatform)/(distanceBYPlatform + distanceBallYPlatform);
-    
-      if (pointOutsidePlatform(pointX, pointY, platformY)) { return; }
-      ballX = pointX + ballRadius;
+      if (pointYOutsidePlatform(pointY, platformY)) { return; }
+      ballX = platformX + platformWidth + ballRadius;
       velocityX = Math.abs(velocityX);
     }
     else {
       return;
     }
-    return [pointX, pointY];
+    return pointY;
   }
   
-  function verticalReflection(bX, bY, platform) {
-    var platformX = platform.position().left;
-    var platformY = platform.position().top;
+  function verticalRepelling(bX, bY) {
+    var platformX = touchablePlatform.position().left;
+    var platformY = touchablePlatform.position().top;
     
-    var distanceBetweenX = Math.abs(bX - ballX);
-    var distanceBXPlatform;
-    var distanceBallXPlatform;
-   
-    // Points intersections with the platform
-    var pointX;
-    var pointY;
+    var distanceBetweenX = distance(bX, ballX);
+    var distanceBXPlatform = distance(bX, platformX);
+    var distanceBallXPlatform = distance(ballX, platformX);
+    
     if (bY < platformY) { // When the ball came to the top
-      distanceBXPlatform = Math.abs(bX - platformX);
-      distanceBallXPlatform = Math.abs(ballX - platformX);
-     
-      pointY = platformY;
-      pointX = bX + (distanceBetweenX*distanceBXPlatform)/(distanceBXPlatform + distanceBallXPlatform);
-     
-      ballY = pointY - ballRadius;
+      ballY = platformY - ballRadius;
       velocityY = -Math.abs(velocityY);
     }
     else if (bY > platformY+platformHeight) { // When the ball came to the bottom
-      distanceBXPlatform = Math.abs(bX - platformX) + platformHeight;
-      distanceBallXPlatform = Math.abs(ballX - platformX) + platformHeight;
-    
-      pointY = platformY + platformHeight;
-      pointX = bX + (distanceBetweenX*distanceBXPlatform)/(distanceBXPlatform + distanceBallXPlatform);
-     
-      ballY = pointY + ballRadius;
+      ballY = platformY + platformHeight + ballRadius;
       velocityY = Math.abs(velocityY);
     }
-    else {
-      return;
-    }
-    return [pointX, pointY];
   }
 
-  function pointOutsidePlatform(pointX, pointY, platformY) {
+  function distance(obj1, obj2) {
+    return Math.abs(obj1 - obj2);
+  }
+
+  function pointYOutsidePlatform(pointY, platformY) {
     return pointY <= platformY || pointY >= platformY+platformHeight;
-  }
-
-  function collisionBallWith(obj) {
-    // Intersection of the axes
-    var XColl=false;
-    var YColl=false;
-
-    var objX = obj.position().left;
-    var objY = obj.position().top;
-    var objWidth = obj.width();
-    var objHeight = obj.height();
-    
-    if ((ballX+ballRadius >= objX) && (ballX-ballRadius <= objX+objWidth)) XColl = true;
-    if ((ballY+ballRadius >= objY) && (ballY-ballRadius <= objY+objHeight)) YColl = true;
-
-    if (XColl&YColl){return true;}
-    return false;
   }
 
   // WebSocket
